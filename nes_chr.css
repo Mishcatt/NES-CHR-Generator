@@ -1,0 +1,55 @@
+body {
+	background-color: #333333;
+	color: #ffffff;
+	text-align: center;
+}
+
+#CHRarray {
+	color: #000000;
+	-ms-user-drag: none; 
+	-ms-user-select: none;
+	-moz-user-drag: none; 
+	-moz-user-select: none;
+	-webkit-user-drag: none; 
+	-webkit-user-select: none;
+	user-drag: none; 
+	user-select: none;
+}
+
+#CHRarray td {
+	height: 50px;
+	width: 50px;
+}
+
+#CHRoutput {
+	width: 200px;
+}
+
+#CHRcolors {
+	height: 100px;
+	display: block;
+}
+
+.CHRcolor1 {
+	cursor: pointer;
+	height: 100px;
+	width: 100px;
+}
+
+.CHRcolor2 {
+	cursor: pointer;
+	height: 100px;
+	width: 100px;
+}
+
+.CHRcolor3 {
+	cursor: pointer;
+	height: 100px;
+	width: 100px;
+}
+
+.CHRcolor4 {
+	cursor: pointer;
+	height: 100px;
+	width: 100px;
+}
