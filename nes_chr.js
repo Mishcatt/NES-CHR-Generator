@@ -36,9 +36,13 @@ var outputColorBlocks = [];
 var tooManyColorsInBlock = false;
 var inputBlockPalettesSorted = [];
 var actuallyUsedPalettes = 0;
+var paletteNumberPerBlock = [];
+var outputPixelNumbers = [];
 
 var inputWidth = 0;
 var inputHeight = 0;
+var xBlocks = 0;
+var yBlocks = 0;
 
 const inputCanvas = document.getElementById("inputCanvas");
 const inputCtx = inputCanvas.getContext("2d");
@@ -139,8 +143,8 @@ function countInputColors() {
 }
 
 function checkBlocksColors() {
-	const xBlocks = Math.floor(inputWidth / 16);
-	const yBlocks = Math.floor(inputHeight / 16);
+	xBlocks = Math.floor(inputWidth / 16);
+	yBlocks = Math.floor(inputHeight / 16);
 	tooManyColorsInBlock = false;
 
 	var outputText = "";
@@ -290,23 +294,13 @@ function countIndividualPalettes() {
 		}
 	}
 	inputBlockPalettesSorted.sort((a, b) => b.length - a.length);
-	// console.log(inputBlockPalettesSorted);
-	// for (p = 0; p < inputBlockPalettesSorted.length; p++) {
-	// 	if (inputBlockPalettesSorted[p].length < maxPaletteColors) {
-	// 		for (e = 0; e < inputBlockPalettesSorted.length, e++) {
- //
-	// 		}
-	// 	}
-	// }
-	// console.log(inputBlockPalettesSorted);
 	return inputBlockPalettesSorted.length;
 }
 
 function assignPaletteNumbers() {
-	const xBlocks = Math.floor(inputWidth / 16);
-	const yBlocks = Math.floor(inputHeight / 16);
-
 	var outputText = "";
+	paletteNumberPerBlock = []
+	actuallyUsedPalettes = 0;
 
 	for (yb = 0; yb < yBlocks; yb++) {
 		for (xb = 0; xb < xBlocks; xb++) {
@@ -329,6 +323,7 @@ function assignPaletteNumbers() {
 				}
 				if (colorsMatched == blockColorsCount) {
 					outputText += p+" ";
+					paletteNumberPerBlock.push(p);
 					break;
 				}
 			}
@@ -337,6 +332,51 @@ function assignPaletteNumbers() {
 	}
 
 	return outputText;
+}
+
+function generateCHR() {
+	outputPixelNumbers = new Array(xBlocks*yBlocks*4);
+	// var outputPixelNumbersOrder = [];
+	var colorMatchCount = 0;
+
+	for (yb = 0; yb < yBlocks; yb++) {
+		const starty = yb*16;
+		for (xb = 0; xb < xBlocks; xb++) {
+			const startx = xb*16;
+			const blockNumber = xb+(yb*xBlocks);
+			const paletteColors = inputBlockPalettesSorted[paletteNumberPerBlock[blockNumber]];
+			const coords = [[startx, starty], [startx+8, starty], [startx, starty+8], [startx+8, starty+8]];
+			const order = [(xb*2)+((yb*2)*xBlocks*2), ((xb*2)+1)+((yb*2)*xBlocks*2), (xb*2)+(((yb*2)+1)*xBlocks*2), ((xb*2)+1)+(((yb*2)+1)*xBlocks*2)];
+			// console.log(coords);
+			for (i = 0; i < 4; i++) {
+				// outputPixelNumbersOrder.push(order[i]);
+				// outputPixelNumbers[order[i]].push([]);
+				outputPixelNumbers[order[i]] = [];
+				// console.log(order[i]);
+				for (yp = coords[i][1]; yp < coords[i][1]+8; yp++) {
+					for (xp = coords[i][0]; xp < coords[i][0]+8; xp++) {
+						const pixelColors = outputCtx.getImageData(xp, yp, 1, 1);
+						var colorFound = false;
+						for (pc = 0; pc < paletteColors.length; pc++) {
+							if (pixelColors.data[0] == paletteColors[pc].data[0] &&
+								pixelColors.data[1] == paletteColors[pc].data[1] &&
+								pixelColors.data[2] == paletteColors[pc].data[2]) {
+								outputPixelNumbers[order[i]].push(pc);
+								colorMatchCount++;
+								colorFound = true;
+								// console.log("b="+blockNumber+" p="+paletteNumberPerBlock[blockNumber]);
+								break;
+							}
+						}
+						if (colorFound == false) {
+							console.log("b="+blockNumber+" p="+paletteNumberPerBlock[blockNumber]+" m="+pixelColors.data[0]+" f="+paletteColors[0].data[0]+" "+paletteColors[1].data[0]+" "+paletteColors[2].data[0]+" "+paletteColors[3].data[0]+" x="+xp+" y="+yp);
+						}
+					}
+				}
+			}
+		}
+	}
+	console.log(colorMatchCount);
 }
 
 document.getElementById("files").onchange = function(e){
@@ -371,7 +411,9 @@ document.getElementById("files").onchange = function(e){
 		// if (tooManyColorsInBlock) return;
 		const individualPaletteCount = countIndividualPalettes();
 		outputBlocksPaletteNumber.innerHTML += "palette numbers: <br />"+assignPaletteNumbers()+"<br />";
-		outputInfo.innerHTML = "individual palettes: "+(actuallyUsedPalettes+1)+"<br />";
+
+		if (actuallyUsedPalettes > 3) outputInfo.innerHTML = 'individual palettes: <span style="color:red;">'+(actuallyUsedPalettes+1)+"</span><br />";
+		else outputInfo.innerHTML = 'individual palettes: <span style="color:green;">'+(actuallyUsedPalettes+1)+"</span><br />";
 		for (p = 0; p <= actuallyUsedPalettes; p++) {
 			var outputTemp = p+": ";
 			for (c = 0; c < inputBlockPalettesSorted[p].length; c++) {
@@ -381,9 +423,12 @@ document.getElementById("files").onchange = function(e){
 				outputTemp += inputBlockPalettesSorted[p][c].data[2]+');">█</span>';
 			}
 			outputInfo.innerHTML += outputTemp;
-			console.log(outputInfo.innerHTML);
+			// console.log(outputInfo.innerHTML);
 			outputInfo.innerHTML += "<br />";
 		}
+		if (actuallyUsedPalettes < 4) generateCHR();
+		else return;
+		// console.log(outputPixelNumbers);
 	}
 };
 
