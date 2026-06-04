@@ -4,6 +4,30 @@ body {
 	text-align: center;
 }
 
+#canvasContent {
+	width:100%;
+	overflow:auto;
+}
+
+#inputCanvasDiv {
+	display: inline-block;
+	vertical-align:top;
+}
+
+#inputBlocksColorCount {
+	display: inline-block;
+	vertical-align:top;
+}
+
+#outputCanvasDiv {
+	display: inline-block;
+	vertical-align:top;
+}
+
+#chrContent {
+	float: none;
+}
+
 #CHRarray {
 	color: #000000;
 	-ms-user-drag: none; 

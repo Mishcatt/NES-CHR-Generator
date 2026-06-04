@@ -6,17 +6,37 @@
 <link rel="stylesheet" href="nes_chr.css" />
 </head>
 <body>
-	<table>
-		<tr>
-			<td><table id="CHRarray"></table></td>
-			<td><div id="CHRoutput"></div></td>
-		</tr>
-		<tr id="CHRcolors">
-			<td><div class="CHRcolor1"></div></td>
-			<td><div class="CHRcolor2"></div></td>
-			<td><div class="CHRcolor3"></div></td>
-			<td><div class="CHRcolor4"></div></td>
-		</tr>
-	</table>
+	<div id="canvasContent">
+		<div id="fileSelect">
+			<br />
+			<input type="file" id="files" name="files[]" accept="image/*" />
+			<br />
+		</div>
+		<div id="inputCanvasDiv">
+			<br />
+			<canvas id="inputCanvas"></canvas>
+			<div id="inputInfo"></div>
+		</div>
+		<div id="inputBlocksColorCount"></div>
+		<div id="outputCanvasDiv">
+			<br />
+			<canvas id="outputCanvas"></canvas>
+			<div id="outputInfo"></div>
+		</div>
+	</div>
+	<div id="chrContent">
+		<table>
+			<tr>
+				<td><table id="CHRarray"></table></td>
+				<td><div id="CHRoutput"></div></td>
+			</tr>
+			<tr id="CHRcolors">
+				<td><div class="CHRcolor1"></div></td>
+				<td><div class="CHRcolor2"></div></td>
+				<td><div class="CHRcolor3"></div></td>
+				<td><div class="CHRcolor4"></div></td>
+			</tr>
+		</table>
+	</div>
 <script src="nes_chr.js" type="text/javascript"></script>
 </body>
