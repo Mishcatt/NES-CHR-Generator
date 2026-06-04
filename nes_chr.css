@@ -24,6 +24,11 @@ body {
 	vertical-align:top;
 }
 
+#outputBlocksPaletteNumber {
+	display: inline-block;
+	vertical-align:top;
+}
+
 #chrContent {
 	float: none;
 }

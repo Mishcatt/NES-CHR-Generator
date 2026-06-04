@@ -35,6 +35,7 @@ var inputColorBlocksCount = [];
 var outputColorBlocks = [];
 var tooManyColorsInBlock = false;
 var inputBlockPalettesSorted = [];
+var actuallyUsedPalettes = 0;
 
 var inputWidth = 0;
 var inputHeight = 0;
@@ -46,6 +47,7 @@ const inputBlocksColorCount = document.getElementById("inputBlocksColorCount");
 const outputCanvas = document.getElementById("outputCanvas");
 const outputCtx = outputCanvas.getContext("2d");
 const outputInfo = document.getElementById("outputInfo");
+const outputBlocksPaletteNumber = document.getElementById("outputBlocksPaletteNumber");
 
 function CHRset(p, x, y) {
 	pixels[p]++;
@@ -144,6 +146,7 @@ function checkBlocksColors() {
 	var outputText = "";
 	inputColorBlocks = [];
 	inputColorBlocksCount = [];
+	outputColorBlocks = [];
 	var backgroundColor = inputCtx.getImageData(0, 0, 1, 1);
 	// backgroundColor.data[0] = 0;
 	// backgroundColor.data[1] = 0;
@@ -181,13 +184,15 @@ function checkBlocksColors() {
 				}
 			}
 			const colorCount = inputColorBlocks[blockNumber].length;
-			if (colorCount <= 4) outputText += colorCount+" ";
-			else {
+			if (colorCount <= 4) {
+				outputText += colorCount+" ";
+				outputColorBlocks.push(inputColorBlocks[blockNumber]);
+			} else {
 				// console.log(inputColorBlocks[blockNumber]);
 				tooManyColorsInBlock = true;
 				outputText += '<span style="color:red;">'+colorCount+' </span>';
-				outputColorBlocks = [];
-				outputColorBlocks.push(inputColorBlocks[blockNumber][0]);
+				outputColorBlocks.push([]);
+				outputColorBlocks[blockNumber].push(inputColorBlocks[blockNumber][0]);
 				for (sort = 1; sort < colorCount; sort++) {
 					maxElement = sort;
 					maxValue = inputColorBlocksCount[blockNumber][sort];
@@ -198,10 +203,10 @@ function checkBlocksColors() {
 						}
 					}
 					temp = inputColorBlocks[blockNumber][sort];
-					outputColorBlocks.push({data:[3]});
-					outputColorBlocks[sort].data[0] = temp.data[0];
-					outputColorBlocks[sort].data[1] = temp.data[1];
-					outputColorBlocks[sort].data[2] = temp.data[2];
+					outputColorBlocks[blockNumber].push({data:[3]});
+					outputColorBlocks[blockNumber][sort].data[0] = temp.data[0];
+					outputColorBlocks[blockNumber][sort].data[1] = temp.data[1];
+					outputColorBlocks[blockNumber][sort].data[2] = temp.data[2];
 					inputColorBlocks[blockNumber][sort] = inputColorBlocks[blockNumber][maxElement];
 					inputColorBlocks[blockNumber][maxElement] = temp;
 					temp = inputColorBlocksCount[blockNumber][sort];
@@ -212,23 +217,23 @@ function checkBlocksColors() {
 					minDiff = 999;
 					minDiffSubstitute = 0;
 					for (substitute = 0; substitute < 4; substitute++) {
-						if (outputColorBlocks[badColor].data[0] > inputColorBlocks[blockNumber][substitute].data[0]) {
-							tempDiff = outputColorBlocks[badColor].data[0] - inputColorBlocks[blockNumber][substitute].data[0];
-						} else tempDiff = inputColorBlocks[blockNumber][substitute].data[0] - outputColorBlocks[badColor].data[0];
-						if (outputColorBlocks[badColor].data[1] > inputColorBlocks[blockNumber][substitute].data[1]) {
-							tempDiff += outputColorBlocks[badColor].data[1] - inputColorBlocks[blockNumber][substitute].data[1];
-						} else tempDiff += inputColorBlocks[blockNumber][substitute].data[1] - outputColorBlocks[badColor].data[1];
-						if (outputColorBlocks[badColor].data[2] > inputColorBlocks[blockNumber][substitute].data[2]) {
-							tempDiff += outputColorBlocks[badColor].data[2] - inputColorBlocks[blockNumber][substitute].data[2];
-						} else tempDiff += inputColorBlocks[blockNumber][substitute].data[2] - outputColorBlocks[badColor].data[2];
+						if (outputColorBlocks[blockNumber][badColor].data[0] > inputColorBlocks[blockNumber][substitute].data[0]) {
+							tempDiff = outputColorBlocks[blockNumber][badColor].data[0] - inputColorBlocks[blockNumber][substitute].data[0];
+						} else tempDiff = inputColorBlocks[blockNumber][substitute].data[0] - outputColorBlocks[blockNumber][badColor].data[0];
+						if (outputColorBlocks[blockNumber][badColor].data[1] > inputColorBlocks[blockNumber][substitute].data[1]) {
+							tempDiff += outputColorBlocks[blockNumber][badColor].data[1] - inputColorBlocks[blockNumber][substitute].data[1];
+						} else tempDiff += inputColorBlocks[blockNumber][substitute].data[1] - outputColorBlocks[blockNumber][badColor].data[1];
+						if (outputColorBlocks[blockNumber][badColor].data[2] > inputColorBlocks[blockNumber][substitute].data[2]) {
+							tempDiff += outputColorBlocks[blockNumber][badColor].data[2] - inputColorBlocks[blockNumber][substitute].data[2];
+						} else tempDiff += inputColorBlocks[blockNumber][substitute].data[2] - outputColorBlocks[blockNumber][badColor].data[2];
 						if (tempDiff < minDiff) {
 							minDiff = tempDiff;
 							minDiffSubstitute = substitute;
 						}
 					}
-					outputColorBlocks[badColor].data[0] = inputColorBlocks[blockNumber][minDiffSubstitute].data[0];
-					outputColorBlocks[badColor].data[1] = inputColorBlocks[blockNumber][minDiffSubstitute].data[1];
-					outputColorBlocks[badColor].data[2] = inputColorBlocks[blockNumber][minDiffSubstitute].data[2];
+					outputColorBlocks[blockNumber][badColor].data[0] = inputColorBlocks[blockNumber][minDiffSubstitute].data[0];
+					outputColorBlocks[blockNumber][badColor].data[1] = inputColorBlocks[blockNumber][minDiffSubstitute].data[1];
+					outputColorBlocks[blockNumber][badColor].data[2] = inputColorBlocks[blockNumber][minDiffSubstitute].data[2];
 				}
 				for (var y = starty; y < starty+16; y++) {
 					for (var x = startx; x < startx+16; x++) {
@@ -238,9 +243,9 @@ function checkBlocksColors() {
 								inputColorBlocks[blockNumber][t].data[1] == pixel.data[1] &&
 								inputColorBlocks[blockNumber][t].data[2] == pixel.data[2]) {
 								// console.log(pixel);
-								pixel.data[0] = outputColorBlocks[t].data[0];
-								pixel.data[1] = outputColorBlocks[t].data[1];
-								pixel.data[2] = outputColorBlocks[t].data[2];
+								pixel.data[0] = outputColorBlocks[blockNumber][t].data[0];
+								pixel.data[1] = outputColorBlocks[blockNumber][t].data[1];
+								pixel.data[2] = outputColorBlocks[blockNumber][t].data[2];
 								outputCtx.putImageData(pixel, x, y);
 								break;
 							}
@@ -297,6 +302,43 @@ function countIndividualPalettes() {
 	return inputBlockPalettesSorted.length;
 }
 
+function assignPaletteNumbers() {
+	const xBlocks = Math.floor(inputWidth / 16);
+	const yBlocks = Math.floor(inputHeight / 16);
+
+	var outputText = "";
+
+	for (yb = 0; yb < yBlocks; yb++) {
+		for (xb = 0; xb < xBlocks; xb++) {
+			const blockNumber = xb+(yb*xBlocks);
+			const blockColorsCount = outputColorBlocks[blockNumber].length;
+
+			for (p = 0; p < inputBlockPalettesSorted.length; p++) {
+				if (p > actuallyUsedPalettes) actuallyUsedPalettes = p;
+				const paletteColors = inputBlockPalettesSorted[p].length;
+				var colorsMatched = 0;
+				for (bc = 0; bc < blockColorsCount; bc++) {
+					for (pc = 0; pc < paletteColors; pc++) {
+						if (outputColorBlocks[blockNumber][bc].data[0] == inputBlockPalettesSorted[p][pc].data[0] &&
+							outputColorBlocks[blockNumber][bc].data[1] == inputBlockPalettesSorted[p][pc].data[1] &&
+							outputColorBlocks[blockNumber][bc].data[2] == inputBlockPalettesSorted[p][pc].data[2]) {
+							colorsMatched++;
+							break;
+						}
+					}
+				}
+				if (colorsMatched == blockColorsCount) {
+					outputText += p+" ";
+					break;
+				}
+			}
+		}
+		outputText += "<br />";
+	}
+
+	return outputText;
+}
+
 document.getElementById("files").onchange = function(e){
 	var URL = window.webkitURL || window.URL;
 	var url = URL.createObjectURL(e.target.files[0]);
@@ -313,6 +355,7 @@ document.getElementById("files").onchange = function(e){
 		inputCtx.drawImage(img, 0, 0, inputWidth, inputHeight);
 
 		inputBlocksColorCount.innerHTML = "";
+		outputBlocksPaletteNumber.innerHTML = "";
 
 		inputInfo.innerHTML = "size: "+inputWidth+"x"+inputHeight+"<br />";
 
@@ -327,7 +370,20 @@ document.getElementById("files").onchange = function(e){
 		inputBlocksColorCount.innerHTML += "colors per block: <br />"+checkBlocksColors()+"<br />";
 		// if (tooManyColorsInBlock) return;
 		const individualPaletteCount = countIndividualPalettes();
-		outputInfo.innerHTML = "individual palettes: "+individualPaletteCount+"<br />";
+		outputBlocksPaletteNumber.innerHTML += "palette numbers: <br />"+assignPaletteNumbers()+"<br />";
+		outputInfo.innerHTML = "individual palettes: "+(actuallyUsedPalettes+1)+"<br />";
+		for (p = 0; p <= actuallyUsedPalettes; p++) {
+			var outputTemp = p+": ";
+			for (c = 0; c < inputBlockPalettesSorted[p].length; c++) {
+				outputTemp += '<span style="color:rgb(';
+				outputTemp += inputBlockPalettesSorted[p][c].data[0]+' ';
+				outputTemp += inputBlockPalettesSorted[p][c].data[1]+' ';
+				outputTemp += inputBlockPalettesSorted[p][c].data[2]+');">█</span>';
+			}
+			outputInfo.innerHTML += outputTemp;
+			console.log(outputInfo.innerHTML);
+			outputInfo.innerHTML += "<br />";
+		}
 	}
 };
 
