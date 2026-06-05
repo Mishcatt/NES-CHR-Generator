@@ -59,6 +59,7 @@ const outputCtx = outputCanvas.getContext("2d");
 const outputInfo = document.getElementById("outputInfo");
 const outputBlocksPaletteNumber = document.getElementById("outputBlocksPaletteNumber");
 const outputBlocksTable = document.getElementById("outputBlocksTable");
+const outputPalettesTable = document.getElementById("outputPalettesTable");
 
 function CHRset(p, x, y) {
 	pixels[p]++;
@@ -480,7 +481,7 @@ function downloadCHR() {
 }
 
 function prepareBlockNumbersTable() {
-	var outputTable = "block numbers:<br />";
+	var outputTable = "<br />block number bytes:<br />";
 	for (y = 0; y < yBlocks*2; y++) {
 		const element = y*xBlocks*2;
 		outputTable += ".byte ";
@@ -488,6 +489,28 @@ function prepareBlockNumbersTable() {
 			outputTable += "$";
 			if (outputGraphicBlockNumbers[element+x] < 16) outputTable += "0";
 			outputTable += outputGraphicBlockNumbers[element+x].toString(16)+", ";
+		}
+		outputTable += "<br />";
+	}
+	return outputTable;
+}
+
+function preparePaletteNumbersTable() {
+	var outputTable = "<br />palette number bytes:<br />";
+	for (y = 0; y < yBlocks; y++) {
+		const element = y*xBlocks;
+		outputTable += ".byte ";
+		var temp = "";
+		for (x = 0; x < xBlocks; x++) {
+			if (x%4 == 0) {
+				outputTable += "%";
+				temp = "";
+			}
+			if (paletteNumberPerBlock[element+x] < 2) temp += "0";
+			temp += paletteNumberPerBlock[element+x].toString(2);
+			if (x%4 == 3) {
+				outputTable += temp+", ";
+			}
 		}
 		outputTable += "<br />";
 	}
@@ -512,6 +535,7 @@ document.getElementById("files").onchange = function(e){
 		inputBlocksColorCount.innerHTML = "";
 		outputBlocksPaletteNumber.innerHTML = "";
 		outputBlocksTable.innerHTML = "";
+		outputPalettesTable.innerHTML = "";
 
 		inputInfo.innerHTML = "size: "+inputWidth+"x"+inputHeight+"<br />";
 
@@ -546,6 +570,7 @@ document.getElementById("files").onchange = function(e){
 			generateCHR();
 			downloadCHR();
 			outputBlocksTable.innerHTML = prepareBlockNumbersTable();
+			outputPalettesTable.innerHTML = preparePaletteNumbersTable();
 		}
 		else return;
 		// console.log(outputPixelNumbers);
