@@ -33,11 +33,17 @@ var inputColorTable = [];
 var inputColorBlocks = [];
 var inputColorBlocksCount = [];
 var outputColorBlocks = [];
+var backgroundColor;
 var tooManyColorsInBlock = false;
 var inputBlockPalettesSorted = [];
 var actuallyUsedPalettes = 0;
 var paletteNumberPerBlock = [];
 var outputPixelNumbers = [];
+var outputPixelNumbersBinaryString = []
+var outputPixelNumbersBinaryStringDeduplicated = [];
+var outputPixelNumbersInt = [];
+var outputPixelNumbersIntDeduplicated = [];
+var outputGraphicBlockNumbers = [];
 
 var inputWidth = 0;
 var inputHeight = 0;
@@ -52,6 +58,7 @@ const outputCanvas = document.getElementById("outputCanvas");
 const outputCtx = outputCanvas.getContext("2d");
 const outputInfo = document.getElementById("outputInfo");
 const outputBlocksPaletteNumber = document.getElementById("outputBlocksPaletteNumber");
+const outputBlocksTable = document.getElementById("outputBlocksTable");
 
 function CHRset(p, x, y) {
 	pixels[p]++;
@@ -151,7 +158,7 @@ function checkBlocksColors() {
 	inputColorBlocks = [];
 	inputColorBlocksCount = [];
 	outputColorBlocks = [];
-	var backgroundColor = inputCtx.getImageData(0, 0, 1, 1);
+	backgroundColor = inputCtx.getImageData(0, 0, 1, 1);
 	// backgroundColor.data[0] = 0;
 	// backgroundColor.data[1] = 0;
 	// backgroundColor.data[2] = 0;
@@ -163,6 +170,7 @@ function checkBlocksColors() {
 			const blockNumber = xb+(yb*xBlocks);
 			inputColorBlocks.push([]);
 			inputColorBlocks[blockNumber].push(backgroundColor);
+			// console.log(inputColorBlocks[blockNumber][0]);
 			inputColorBlocksCount.push([]);
 			inputColorBlocksCount[blockNumber].push(0);
 			for (var y = starty; y < starty+16; y++) {
@@ -267,12 +275,17 @@ function checkBlocksColors() {
 function countIndividualPalettes() {
 	var maxPaletteColors = 0;
 	inputBlockPalettesSorted = [];
+	// console.log(inputColorBlocks[1][0].data[1]);
 	for (blockNumber = 0; blockNumber < inputColorBlocks.length; blockNumber++) {
 		// console.log(inputColorBlocks[blockNumber]);
+		// console.log(inputColorBlocks[blockNumber][0].data[1]);
 		if (inputColorBlocks[blockNumber].length > maxPaletteColors) maxPaletteColors = inputColorBlocks[blockNumber].length;
+		var splice = inputColorBlocks[blockNumber].splice(0,1);
+		// console.log(splice);
 		for (rgb = 2; rgb >= 0; rgb--) {
 			inputColorBlocks[blockNumber].sort((a, b) => a.data[rgb] - b.data[rgb]);
 		}
+		inputColorBlocks[blockNumber].unshift(splice[0]);
 		// console.log(inputColorBlocks[blockNumber]);
 		var colorFound = false;
 		for (p = 0; p < inputBlockPalettesSorted.length; p++) {
@@ -293,7 +306,42 @@ function countIndividualPalettes() {
 			inputBlockPalettesSorted.push(inputColorBlocks[blockNumber]);
 		}
 	}
-	inputBlockPalettesSorted.sort((a, b) => b.length - a.length);
+	// console.log(inputColorBlocks[1][0].data[1]);
+	// inputBlockPalettesSorted.sort((a, b) => b.length - a.length);
+	// const maxLength = inputBlockPalettesSorted[0].length;
+
+	inputBlockPalettesSorted.sort((a, b) => {
+		if (b.length !== a.length) return b.length - a.length;  // longer palettes first (preserved)
+		for (let i = 1; i < a.length; i++) {                    // skip i=0, color0 is always equal
+			for (let ch = 0; ch < 3; ch++) {
+				if (a[i].data[ch] !== b[i].data[ch]) return a[i].data[ch] - b[i].data[ch];
+			}
+		}
+		return 0;
+	});
+
+	// for (blockNumber = 0; blockNumber < inputBlockPalettesSorted.length; blockNumber++) {
+	// 	if (inputBlockPalettesSorted[blockNumber].length < maxLength) break;
+	// 	// var splice = inputBlockPalettesSorted[blockNumber].splice(0,1);
+	// 	const colorCount = inputBlockPalettesSorted[blockNumber].length;
+	// 	for (rgb = 2; rgb >= 0; rgb--) {
+	// 		// inputBlockPalettesSorted[blockNumber].sort((a, b) => a.data[rgb] - b.data[rgb]);
+	// 		for (sort = 1; sort < colorCount; sort++) {
+	// 			maxElement = sort;
+	// 			maxValue = inputBlockPalettesSorted[blockNumber][sort].data[rgb];
+	// 			for (e = sort; e < colorCount; e++) {
+	// 				if (inputBlockPalettesSorted[blockNumber][e].data[rgb] >= maxValue) {
+	// 					maxValue = inputBlockPalettesSorted[blockNumber][e].data[rgb];
+	// 					maxElement = e;
+	// 				}
+	// 			}
+	// 			temp = inputBlockPalettesSorted[blockNumber][sort];
+	// 			inputBlockPalettesSorted[blockNumber][sort] = inputBlockPalettesSorted[blockNumber][maxElement];
+	// 			inputBlockPalettesSorted[blockNumber][maxElement] = temp;
+	// 		}
+	// 	}
+	// 	// inputBlockPalettesSorted[blockNumber].unshift(splice[0]);
+	// }
 	return inputBlockPalettesSorted.length;
 }
 
@@ -336,7 +384,11 @@ function assignPaletteNumbers() {
 
 function generateCHR() {
 	outputPixelNumbers = new Array(xBlocks*yBlocks*4);
-	// var outputPixelNumbersOrder = [];
+	outputPixelNumbersBinaryString = new Array(xBlocks*yBlocks*4);
+	outputPixelNumbersInt = [];
+	outputPixelNumbersBinaryStringDeduplicated = [];
+	outputPixelNumbersIntDeduplicated = [];
+	outputGraphicBlockNumbers = new Array(xBlocks*yBlocks*4);
 	var colorMatchCount = 0;
 
 	for (yb = 0; yb < yBlocks; yb++) {
@@ -349,10 +401,10 @@ function generateCHR() {
 			const order = [(xb*2)+((yb*2)*xBlocks*2), ((xb*2)+1)+((yb*2)*xBlocks*2), (xb*2)+(((yb*2)+1)*xBlocks*2), ((xb*2)+1)+(((yb*2)+1)*xBlocks*2)];
 			// console.log(coords);
 			for (i = 0; i < 4; i++) {
-				// outputPixelNumbersOrder.push(order[i]);
 				// outputPixelNumbers[order[i]].push([]);
-				outputPixelNumbers[order[i]] = [];
-				// console.log(order[i]);
+				const orderElement = order[i];
+				outputPixelNumbers[orderElement] = [];
+				// console.log(orderElement);
 				for (yp = coords[i][1]; yp < coords[i][1]+8; yp++) {
 					for (xp = coords[i][0]; xp < coords[i][0]+8; xp++) {
 						const pixelColors = outputCtx.getImageData(xp, yp, 1, 1);
@@ -361,7 +413,7 @@ function generateCHR() {
 							if (pixelColors.data[0] == paletteColors[pc].data[0] &&
 								pixelColors.data[1] == paletteColors[pc].data[1] &&
 								pixelColors.data[2] == paletteColors[pc].data[2]) {
-								outputPixelNumbers[order[i]].push(pc);
+								outputPixelNumbers[orderElement].push(pc);
 								colorMatchCount++;
 								colorFound = true;
 								// console.log("b="+blockNumber+" p="+paletteNumberPerBlock[blockNumber]);
@@ -373,10 +425,73 @@ function generateCHR() {
 						}
 					}
 				}
+				outputPixelNumbersBinaryString[orderElement] = "";
+				// outputPixelNumbersInt[orderElement]
+				var tempBinaryString = "";
+				for (p = 0; p < outputPixelNumbers[orderElement].length; p++) {
+					if (outputPixelNumbers[orderElement][p] == 1 || outputPixelNumbers[orderElement][p] == 3) tempBinaryString += "1";
+					else tempBinaryString += "0";
+					if (p%8 == 7) {
+						outputPixelNumbersBinaryString[orderElement] += tempBinaryString;
+						outputPixelNumbersInt.push(parseInt(tempBinaryString, 2));
+						tempBinaryString = "";
+					}
+				}
+				for (p = 0; p < outputPixelNumbers[orderElement].length; p++) {
+					if (outputPixelNumbers[orderElement][p] == 2 || outputPixelNumbers[orderElement][p] == 3) tempBinaryString += "1";
+					else tempBinaryString += "0";
+					if (p%8 == 7) {
+						outputPixelNumbersBinaryString[orderElement] += tempBinaryString;
+						outputPixelNumbersInt.push(parseInt(tempBinaryString, 2));
+						tempBinaryString = "";
+					}
+				}
+				var blockFound = false;
+				for (b = 0; b < outputPixelNumbersBinaryStringDeduplicated.length; b++) {
+					if (outputPixelNumbersBinaryStringDeduplicated[b].localeCompare(outputPixelNumbersBinaryString[orderElement]) == 0) {
+						blockFound = true;
+						outputGraphicBlockNumbers[orderElement] = b;
+						break;
+					}
+				}
+				if (blockFound == false) {
+					outputPixelNumbersBinaryStringDeduplicated.push(outputPixelNumbersBinaryString[orderElement]);
+					outputGraphicBlockNumbers[orderElement] = outputPixelNumbersBinaryStringDeduplicated.length-1;
+					for (e = 0; e < 16; e++) {
+						outputPixelNumbersIntDeduplicated.push(outputPixelNumbersInt[(outputPixelNumbersInt.length)-16+e]);
+						// console.log(outputPixelNumbersIntDeduplicated[outputPixelNumbersIntDeduplicated.length-1]+" "+outputPixelNumbersInt[(outputPixelNumbersInt.length)-16+e]);
+					}
+				}
 			}
 		}
 	}
-	console.log(colorMatchCount);
+	console.log(outputPixelNumbersBinaryString.length+" -> "+outputPixelNumbersBinaryStringDeduplicated.length+" CHR blocks");
+}
+
+function downloadCHR() {
+	const uint8 = new Uint8Array(outputPixelNumbersIntDeduplicated);
+	const blob = new Blob([uint8], { type: "application/octet-stream" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = "output.chr";
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+function prepareBlockNumbersTable() {
+	var outputTable = "block numbers:<br />";
+	for (y = 0; y < yBlocks*2; y++) {
+		const element = y*xBlocks*2;
+		outputTable += ".byte ";
+		for (x = 0; x < xBlocks*2; x++) {
+			outputTable += "$";
+			if (outputGraphicBlockNumbers[element+x] < 16) outputTable += "0";
+			outputTable += outputGraphicBlockNumbers[element+x].toString(16)+", ";
+		}
+		outputTable += "<br />";
+	}
+	return outputTable;
 }
 
 document.getElementById("files").onchange = function(e){
@@ -396,6 +511,7 @@ document.getElementById("files").onchange = function(e){
 
 		inputBlocksColorCount.innerHTML = "";
 		outputBlocksPaletteNumber.innerHTML = "";
+		outputBlocksTable.innerHTML = "";
 
 		inputInfo.innerHTML = "size: "+inputWidth+"x"+inputHeight+"<br />";
 
@@ -426,7 +542,11 @@ document.getElementById("files").onchange = function(e){
 			// console.log(outputInfo.innerHTML);
 			outputInfo.innerHTML += "<br />";
 		}
-		if (actuallyUsedPalettes < 4) generateCHR();
+		if (actuallyUsedPalettes < 4) {
+			generateCHR();
+			downloadCHR();
+			outputBlocksTable.innerHTML = prepareBlockNumbersTable();
+		}
 		else return;
 		// console.log(outputPixelNumbers);
 	}
