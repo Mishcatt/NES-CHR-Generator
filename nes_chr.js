@@ -128,7 +128,6 @@ function ColorSet(c) {
 
 function countInputColors() {
 	inputColorTable = [];
-	// var inputImageData = inputCtx.getImageData(0, 0, inputWidth, inputHeight);
 	var pixel;
 	for (var y = 0; y < inputHeight; y++) {
 		for (var x = 0; x < inputWidth; x++) {
@@ -160,9 +159,6 @@ function checkBlocksColors() {
 	inputColorBlocksCount = [];
 	outputColorBlocks = [];
 	backgroundColor = inputCtx.getImageData(0, 0, 1, 1);
-	// backgroundColor.data[0] = 0;
-	// backgroundColor.data[1] = 0;
-	// backgroundColor.data[2] = 0;
 
 	for (yb = 0; yb < yBlocks; yb++) {
 		const starty = yb*16;
@@ -171,7 +167,6 @@ function checkBlocksColors() {
 			const blockNumber = xb+(yb*xBlocks);
 			inputColorBlocks.push([]);
 			inputColorBlocks[blockNumber].push(backgroundColor);
-			// console.log(inputColorBlocks[blockNumber][0]);
 			inputColorBlocksCount.push([]);
 			inputColorBlocksCount[blockNumber].push(0);
 			for (var y = starty; y < starty+16; y++) {
@@ -189,8 +184,6 @@ function checkBlocksColors() {
 						}
 					}
 					if (colorFound == false) {
-						// console.log(pixel);
-						// console.log(pixel + " " + pixel.data[0] + " " + pixel.data[1] + " " + pixel.data[2] + " " + pixel.data[3]);
 						inputColorBlocks[blockNumber].push(pixel);
 						inputColorBlocksCount[blockNumber].push(1);
 					}
@@ -201,7 +194,6 @@ function checkBlocksColors() {
 				outputText += colorCount+" ";
 				outputColorBlocks.push(inputColorBlocks[blockNumber]);
 			} else {
-				// console.log(inputColorBlocks[blockNumber]);
 				tooManyColorsInBlock = true;
 				outputText += '<span style="color:red;">'+colorCount+' </span>';
 				outputColorBlocks.push([]);
@@ -255,7 +247,6 @@ function checkBlocksColors() {
 							if (inputColorBlocks[blockNumber][t].data[0] == pixel.data[0] &&
 								inputColorBlocks[blockNumber][t].data[1] == pixel.data[1] &&
 								inputColorBlocks[blockNumber][t].data[2] == pixel.data[2]) {
-								// console.log(pixel);
 								pixel.data[0] = outputColorBlocks[blockNumber][t].data[0];
 								pixel.data[1] = outputColorBlocks[blockNumber][t].data[1];
 								pixel.data[2] = outputColorBlocks[blockNumber][t].data[2];
@@ -276,18 +267,14 @@ function checkBlocksColors() {
 function countIndividualPalettes() {
 	var maxPaletteColors = 0;
 	inputBlockPalettesSorted = [];
-	// console.log(inputColorBlocks[1][0].data[1]);
 	for (blockNumber = 0; blockNumber < inputColorBlocks.length; blockNumber++) {
-		// console.log(inputColorBlocks[blockNumber]);
-		// console.log(inputColorBlocks[blockNumber][0].data[1]);
+
 		if (inputColorBlocks[blockNumber].length > maxPaletteColors) maxPaletteColors = inputColorBlocks[blockNumber].length;
 		var splice = inputColorBlocks[blockNumber].splice(0,1);
-		// console.log(splice);
 		for (rgb = 2; rgb >= 0; rgb--) {
 			inputColorBlocks[blockNumber].sort((a, b) => a.data[rgb] - b.data[rgb]);
 		}
 		inputColorBlocks[blockNumber].unshift(splice[0]);
-		// console.log(inputColorBlocks[blockNumber]);
 		var colorFound = false;
 		for (p = 0; p < inputBlockPalettesSorted.length; p++) {
 			if (inputColorBlocks[blockNumber].length == inputBlockPalettesSorted[p].length) {
@@ -307,13 +294,10 @@ function countIndividualPalettes() {
 			inputBlockPalettesSorted.push(inputColorBlocks[blockNumber]);
 		}
 	}
-	// console.log(inputColorBlocks[1][0].data[1]);
-	// inputBlockPalettesSorted.sort((a, b) => b.length - a.length);
-	// const maxLength = inputBlockPalettesSorted[0].length;
 
 	inputBlockPalettesSorted.sort((a, b) => {
-		if (b.length !== a.length) return b.length - a.length;  // longer palettes first (preserved)
-		for (let i = 1; i < a.length; i++) {                    // skip i=0, color0 is always equal
+		if (b.length !== a.length) return b.length - a.length;
+		for (let i = 1; i < a.length; i++) {
 			for (let ch = 0; ch < 3; ch++) {
 				if (a[i].data[ch] !== b[i].data[ch]) return a[i].data[ch] - b[i].data[ch];
 			}
@@ -321,28 +305,6 @@ function countIndividualPalettes() {
 		return 0;
 	});
 
-	// for (blockNumber = 0; blockNumber < inputBlockPalettesSorted.length; blockNumber++) {
-	// 	if (inputBlockPalettesSorted[blockNumber].length < maxLength) break;
-	// 	// var splice = inputBlockPalettesSorted[blockNumber].splice(0,1);
-	// 	const colorCount = inputBlockPalettesSorted[blockNumber].length;
-	// 	for (rgb = 2; rgb >= 0; rgb--) {
-	// 		// inputBlockPalettesSorted[blockNumber].sort((a, b) => a.data[rgb] - b.data[rgb]);
-	// 		for (sort = 1; sort < colorCount; sort++) {
-	// 			maxElement = sort;
-	// 			maxValue = inputBlockPalettesSorted[blockNumber][sort].data[rgb];
-	// 			for (e = sort; e < colorCount; e++) {
-	// 				if (inputBlockPalettesSorted[blockNumber][e].data[rgb] >= maxValue) {
-	// 					maxValue = inputBlockPalettesSorted[blockNumber][e].data[rgb];
-	// 					maxElement = e;
-	// 				}
-	// 			}
-	// 			temp = inputBlockPalettesSorted[blockNumber][sort];
-	// 			inputBlockPalettesSorted[blockNumber][sort] = inputBlockPalettesSorted[blockNumber][maxElement];
-	// 			inputBlockPalettesSorted[blockNumber][maxElement] = temp;
-	// 		}
-	// 	}
-	// 	// inputBlockPalettesSorted[blockNumber].unshift(splice[0]);
-	// }
 	return inputBlockPalettesSorted.length;
 }
 
@@ -400,12 +362,9 @@ function generateCHR() {
 			const paletteColors = inputBlockPalettesSorted[paletteNumberPerBlock[blockNumber]];
 			const coords = [[startx, starty], [startx+8, starty], [startx, starty+8], [startx+8, starty+8]];
 			const order = [(xb*2)+((yb*2)*xBlocks*2), ((xb*2)+1)+((yb*2)*xBlocks*2), (xb*2)+(((yb*2)+1)*xBlocks*2), ((xb*2)+1)+(((yb*2)+1)*xBlocks*2)];
-			// console.log(coords);
 			for (i = 0; i < 4; i++) {
-				// outputPixelNumbers[order[i]].push([]);
 				const orderElement = order[i];
 				outputPixelNumbers[orderElement] = [];
-				// console.log(orderElement);
 				for (yp = coords[i][1]; yp < coords[i][1]+8; yp++) {
 					for (xp = coords[i][0]; xp < coords[i][0]+8; xp++) {
 						const pixelColors = outputCtx.getImageData(xp, yp, 1, 1);
@@ -417,7 +376,6 @@ function generateCHR() {
 								outputPixelNumbers[orderElement].push(pc);
 								colorMatchCount++;
 								colorFound = true;
-								// console.log("b="+blockNumber+" p="+paletteNumberPerBlock[blockNumber]);
 								break;
 							}
 						}
@@ -427,7 +385,6 @@ function generateCHR() {
 					}
 				}
 				outputPixelNumbersBinaryString[orderElement] = "";
-				// outputPixelNumbersInt[orderElement]
 				var tempBinaryString = "";
 				for (p = 0; p < outputPixelNumbers[orderElement].length; p++) {
 					if (outputPixelNumbers[orderElement][p] == 1 || outputPixelNumbers[orderElement][p] == 3) tempBinaryString += "1";
@@ -460,7 +417,6 @@ function generateCHR() {
 					outputGraphicBlockNumbers[orderElement] = outputPixelNumbersBinaryStringDeduplicated.length-1;
 					for (e = 0; e < 16; e++) {
 						outputPixelNumbersIntDeduplicated.push(outputPixelNumbersInt[(outputPixelNumbersInt.length)-16+e]);
-						// console.log(outputPixelNumbersIntDeduplicated[outputPixelNumbersIntDeduplicated.length-1]+" "+outputPixelNumbersInt[(outputPixelNumbersInt.length)-16+e]);
 					}
 				}
 			}
@@ -563,7 +519,6 @@ document.getElementById("files").onchange = function(e){
 				outputTemp += inputBlockPalettesSorted[p][c].data[2]+');">█</span>';
 			}
 			outputInfo.innerHTML += outputTemp;
-			// console.log(outputInfo.innerHTML);
 			outputInfo.innerHTML += "<br />";
 		}
 		if (actuallyUsedPalettes < 4) {
@@ -573,7 +528,6 @@ document.getElementById("files").onchange = function(e){
 			outputPalettesTable.innerHTML = preparePaletteNumbersTable();
 		}
 		else return;
-		// console.log(outputPixelNumbers);
 	}
 };
 
