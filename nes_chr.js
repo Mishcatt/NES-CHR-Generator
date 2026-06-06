@@ -444,7 +444,8 @@ function prepareBlockNumbersTable() {
 		for (x = 0; x < xBlocks*2; x++) {
 			outputTable += "$";
 			if (outputGraphicBlockNumbers[element+x] < 16) outputTable += "0";
-			outputTable += outputGraphicBlockNumbers[element+x].toString(16)+", ";
+			outputTable += outputGraphicBlockNumbers[element+x].toString(16);
+			if (x < (xBlocks*2)-1) outputTable +=", ";
 		}
 		outputTable += "<br />";
 	}
@@ -453,24 +454,41 @@ function prepareBlockNumbersTable() {
 
 function preparePaletteNumbersTable() {
 	var outputTable = "<br />palette number bytes:<br />";
-	for (y = 0; y < yBlocks; y++) {
+	for (y = 0; y < yBlocks; y+=2) {
 		const element = y*xBlocks;
 		outputTable += ".byte ";
 		var temp = "";
-		for (x = 0; x < xBlocks; x++) {
-			if (x%4 == 0) {
-				outputTable += "%";
-				temp = "";
-			}
+		for (x = 0; x < xBlocks; x+=2) {
+			outputTable += "%";
+			temp = "";
+
+			if (paletteNumberPerBlock[element+x+xBlocks+1] < 2) temp += "0";
+			temp += paletteNumberPerBlock[element+x+xBlocks+1].toString(2);
+			if (paletteNumberPerBlock[element+x+xBlocks] < 2) temp += "0";
+			temp += paletteNumberPerBlock[element+x+xBlocks].toString(2);
+			if (paletteNumberPerBlock[element+x+1] < 2) temp += "0";
+			temp += paletteNumberPerBlock[element+x+1].toString(2);
 			if (paletteNumberPerBlock[element+x] < 2) temp += "0";
 			temp += paletteNumberPerBlock[element+x].toString(2);
-			if (x%4 == 3) {
-				outputTable += temp+", ";
-			}
+
+			if (x < xBlocks-2) temp +=", ";
+			outputTable += temp;
 		}
 		outputTable += "<br />";
 	}
 	return outputTable;
+}
+
+function generateRandomCHR() {
+	var outputInt = new Uint8Array(2*256*2*8);
+	self.crypto.getRandomValues(outputInt);
+	const blob = new Blob([outputInt], { type: "application/octet-stream" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = "random.chr";
+	a.click();
+	URL.revokeObjectURL(url);
 }
 
 document.getElementById("files").onchange = function(e){
